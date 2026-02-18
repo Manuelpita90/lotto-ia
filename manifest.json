@@ -1,0 +1,24 @@
+{
+  "name": "Lotto IA Móvil",
+  "short_name": "LottoIA",
+  "start_url": "./movil.html",
+  "display": "standalone",
+  "background_color": "#121212",
+  "theme_color": "#00f2c3",
+  "description": "Monitor de pronósticos de lotería con IA",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "img/icon.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "img/icon.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}

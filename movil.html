@@ -1,0 +1,305 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"> <title>Lotto IA Móvil</title>
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#121212">
+    <link rel="apple-touch-icon" href="img/icon.png">
+    <style>
+        body { background-color: #121212; color: white; font-family: sans-serif; text-align: center; padding: 20px; }
+        .card { background: #1e1e1e; padding: 20px; border-radius: 15px; margin-bottom: 20px; box-shadow: 0 4px 10px rgba(0,0,0,0.5); }
+        h1 { color: #00f2c3; margin: 0; }
+        .animal-grande { font-size: 4rem; margin: 10px; }
+        .dato { font-size: 1.5rem; font-weight: bold; }
+        .badge { padding: 5px 10px; border-radius: 5px; font-size: 0.9rem; }
+        .live { color: red; animation: parpadeo 1s infinite; }
+        @keyframes parpadeo { 0% { opacity: 1; } 50% { opacity: 0.5; } 100% { opacity: 1; } }
+        
+        /* Estilos para listas horizontales */
+        .scroll-container { display: flex; gap: 10px; overflow-x: auto; padding-bottom: 10px; scrollbar-width: none; }
+        .mini-card { background: #333; padding: 10px; border-radius: 10px; min-width: 80px; text-align: center; border: 1px solid #444; }
+        .mini-card h4 { margin: 5px 0; font-size: 0.8rem; color: #fff; }
+        .mini-card .num { font-size: 1.2rem; font-weight: bold; color: #fff; }
+        .mini-card .pct { font-size: 0.7rem; font-weight: bold; }
+        
+        /* Toast Notification */
+        .toast { visibility: hidden; min-width: 250px; background-color: #333; color: #fff; text-align: center; border-radius: 50px; padding: 16px; position: fixed; z-index: 2000; left: 50%; bottom: 30px; transform: translateX(-50%); font-size: 1rem; border: 1px solid #00f2c3; box-shadow: 0 4px 15px rgba(0,0,0,0.8); }
+        .toast.show { visibility: visible; animation: fadein 0.5s, fadeout 0.5s 2.5s; }
+        @keyframes fadein { from {bottom: 0; opacity: 0;} to {bottom: 30px; opacity: 1;} }
+        @keyframes fadeout { from {bottom: 30px; opacity: 1;} to {bottom: 0; opacity: 0;} }
+
+        /* Floating Button & Modal About */
+        .float-btn { position: fixed; bottom: 20px; right: 20px; background: #27293d; color: #00f2c3; border: 2px solid #00f2c3; border-radius: 50%; width: 50px; height: 50px; font-size: 1.5rem; display: flex; justify-content: center; align-items: center; box-shadow: 0 4px 10px rgba(0,0,0,0.5); z-index: 1500; cursor: pointer; transition: transform 0.2s; animation: popIn 0.8s cubic-bezier(0.68, -0.55, 0.27, 1.55) forwards; }
+        .float-btn:active { transform: scale(0.9); }
+        @keyframes popIn { from { transform: scale(0) rotate(-180deg); opacity: 0; } to { transform: scale(1) rotate(0deg); opacity: 1; } }
+        .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 2500; display: flex; justify-content: center; align-items: center; backdrop-filter: blur(5px); }
+        .hidden { display: none; }
+        .about-content { background: #1e1e1e; padding: 30px; border-radius: 20px; text-align: center; width: 85%; max-width: 350px; border: 1px solid #e14eca; position: relative; }
+        .about-logo { width: 80px; height: 80px; border-radius: 50%; border: 3px solid #00f2c3; margin-bottom: 15px; box-shadow: 0 0 15px rgba(0, 242, 195, 0.3); object-fit: cover; }
+    </style>
+</head>
+<body>
+
+    <!-- Toast Notification Container -->
+    <div id="toast" class="toast"></div>
+
+    <div style="display: flex; justify-content: space-between; align-items: center;">
+        <h3>📱 Monitor Remoto</h3>
+        <span class="live">● EN VIVO</span>
+    </div>
+
+    <!-- Sonido de notificación -->
+    <audio id="notificacion" src="https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3"></audio>
+
+    <!-- Botón Notificaciones -->
+    <button id="btn-notif" style="background: #333; color: white; border: 1px solid #555; padding: 8px 15px; border-radius: 20px; margin-bottom: 15px; cursor: pointer; width: 100%;">🔔 Activar Alertas</button>
+
+    <div class="card" style="border-top: 4px solid #ff0055;">
+        <p style="color: #aaa;">Último Sorteo</p>
+        <div id="ultimo-animal" class="dato">Esperando...</div>
+    </div>
+
+    <div class="card" style="border-top: 4px solid #00f2c3;">
+        <p style="color: #aaa;">IA Recomienda para ahora</p>
+        <div class="animal-grande">🎰</div>
+        <div id="prediccion-ia" class="dato">Cargando...</div>
+        <div id="probabilidad-ia" class="badge" style="background: #00f2c3; color: black; margin-top: 10px; display: inline-block;">0%</div>
+    </div>
+
+    <!-- Nuevas Secciones de Pronósticos -->
+    <div class="card">
+        <p style="color: #aaa; margin-bottom: 10px;">🔒 Datos Fijos</p>
+        <div id="fijos-container" class="scroll-container"></div>
+    </div>
+
+    <div class="card">
+        <p style="color: #aaa; margin-bottom: 10px;">🔥 Datos Calientes</p>
+        <div id="calientes-container" class="scroll-container"></div>
+    </div>
+
+    <div class="card">
+        <p style="color: #aaa; margin-bottom: 10px;">🔄 Datos Frecuentes</p>
+        <div id="frecuentes-container" class="scroll-container"></div>
+    </div>
+
+    <div class="card">
+        <p style="color: #aaa; margin-bottom: 10px;">📅 Resultados de Hoy</p>
+        <div id="resultados-hoy-container" style="text-align: left;"></div>
+    </div>
+
+    <div class="card">
+        <p style="color: #aaa; margin-bottom: 10px;">Historial Reciente</p>
+        <div id="historial-container" style="text-align: left;"></div>
+    </div>
+
+    <!-- Banner de Instalación PWA -->
+    <div id="install-banner" style="display: none; position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); background: #222; padding: 20px; border-radius: 15px; box-shadow: 0 4px 20px rgba(0,0,0,0.8); width: 90%; max-width: 400px; text-align: center; border: 1px solid #00f2c3; z-index: 1000;">
+        <p style="margin: 0 0 15px 0; color: white; font-weight: bold;">📲 Instala Lotto IA para acceso rápido</p>
+        <button id="btn-install" style="background: #00f2c3; color: black; border: none; padding: 12px 25px; border-radius: 8px; font-weight: bold; cursor: pointer; font-size: 1rem;">Instalar App</button>
+        <button onclick="document.getElementById('install-banner').style.display='none'" style="background: transparent; color: #aaa; border: none; margin-left: 10px; cursor: pointer; text-decoration: underline;">Ahora no</button>
+    </div>
+
+    <!-- Botón Flotante Acerca De -->
+    <div class="float-btn" onclick="document.getElementById('modal-about').classList.remove('hidden')">
+        ℹ️
+    </div>
+
+    <!-- Modal Acerca De -->
+    <div id="modal-about" class="modal-overlay hidden">
+        <div class="about-content">
+            <img src="img/icon.png" class="about-logo" alt="Logo AJP-Logic">
+            <h2 style="color: #e14eca; margin: 5px 0;">Lotto IA Móvil</h2>
+            <p style="color: #ccc; margin: 5px 0;">Versión 1.0.0</p>
+            <p style="color: #aaa; font-size: 0.8em; margin-bottom: 15px;">Actualizado: Enero 2025</p>
+            <button id="btn-share-wa" style="background: #25D366; color: white; border: none; padding: 10px 20px; border-radius: 20px; margin-bottom: 20px; cursor: pointer; font-weight: bold; font-size: 0.9rem; width: 100%;">📲 Compartir Pronóstico</button>
+            <hr style="border-color: #333; margin: 15px 0;">
+            <p style="color: #fff; font-size: 0.9em;">Desarrollado por <strong style="color: #00f2c3;">AJP-Logic</strong></p>
+            <p style="color: #666; font-size: 0.7em;">Copyright © 2025 AJP-Logic</p>
+            <button onclick="document.getElementById('modal-about').classList.add('hidden')" style="background: #333; color: white; border: 1px solid #555; padding: 8px 20px; border-radius: 10px; margin-top: 15px; cursor: pointer;">Cerrar</button>
+        </div>
+    </div>
+
+    <script type="module">
+        // Importamos Firebase directamente desde Internet (CDN)
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+        import { getFirestore, doc, onSnapshot, enableIndexedDbPersistence } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+        import { getAnalytics } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-analytics.js";
+
+        // PEGA LA MISMA CONFIGURACIÓN AQUÍ
+        const firebaseConfig = {
+            apiKey: "AIzaSyANhUUQ3T1k_RfVRkuM57nM6OZuCrqApXc",
+            authDomain: "lotto-ia-d4cc4.firebaseapp.com",
+            projectId: "lotto-ia-d4cc4",
+            storageBucket: "lotto-ia-d4cc4.firebasestorage.app",
+            messagingSenderId: "829501079121",
+            appId: "1:829501079121:web:431af547ed6ac3fbd00270",
+            measurementId: "G-R4LPHJ0PRS"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const analytics = getAnalytics(app);
+        const db = getFirestore(app);
+
+        // Habilitar persistencia offline (Caché)
+        enableIndexedDbPersistence(db).catch((err) => {
+            if (err.code == 'failed-precondition') {
+                console.log('Persistencia falló: Múltiples pestañas abiertas.');
+            } else if (err.code == 'unimplemented') {
+                console.log('Persistencia no soportada por el navegador.');
+            }
+        });
+        console.log("Firebase SDK inicializado.");
+
+        let isFirstLoad = true;
+
+        // ESCUCHAR EN TIEMPO REAL
+        // 'onSnapshot' se activa solo cuando la base de datos cambia
+        onSnapshot(doc(db, "monitor", "en_vivo"), (snapshot) => {
+            console.log("🔥 Conexión a Firebase exitosa. Datos recibidos.");
+            if (snapshot.exists()) {
+                const data = snapshot.data();
+                
+                document.getElementById("ultimo-animal").innerText = data.ultimoAnimal;
+                document.getElementById("prediccion-ia").innerText = data.prediccionIA;
+                document.getElementById("probabilidad-ia").innerText = data.probabilidad + "% Probabilidad";
+
+                // Configurar botón de compartir
+                document.getElementById('btn-share-wa').onclick = () => {
+                    const texto = `🤖 *Lotto IA Reporte*\n\n🏁 Último: ${data.ultimoAnimal}\n🔮 Predicción: *${data.prediccionIA}*\n📊 Probabilidad: ${data.probabilidad}%\n\n¡Suerte! 🍀`;
+                    const url = `https://wa.me/?text=${encodeURIComponent(texto)}`;
+                    window.open(url, '_blank');
+                };
+                
+                // Renderizar Historial
+                const historialDiv = document.getElementById("historial-container");
+                if (data.historial && Array.isArray(data.historial)) {
+                    historialDiv.innerHTML = data.historial.map(h => `
+                        <div style="display: flex; justify-content: space-between; border-bottom: 1px solid #333; padding: 8px 0;">
+                            <span style="color: #ccc;">${h.hora}</span>
+                            <span style="font-weight: bold; color: #fff;">${h.numero} - ${h.animal}</span>
+                        </div>
+                    `).join('');
+                }
+
+                // Renderizar Resultados de Hoy
+                const resultadosHoyDiv = document.getElementById("resultados-hoy-container");
+                if (data.resultadosHoy && Array.isArray(data.resultadosHoy) && data.resultadosHoy.length > 0) {
+                    resultadosHoyDiv.innerHTML = data.resultadosHoy.map(r => {
+                        const estilo = r.esAcierto ? 'color: #00f2c3; font-weight: bold; text-shadow: 0 0 5px rgba(0,242,195,0.5);' : 'color: #fff; font-weight: bold;';
+                        const icon = r.esAcierto ? '✅ ' : '';
+                        
+                        let clickAttr = '';
+                        if (r.esAcierto && r.metodosAcierto && r.metodosAcierto.length > 0) {
+                            const msg = `🎯 Acierto por: ${r.metodosAcierto.join(', ')}`;
+                            clickAttr = `onclick="window.showToast('${msg}')" style="cursor: pointer;"`;
+                        }
+
+                        return `
+                        <div ${clickAttr} style="display: flex; justify-content: space-between; border-bottom: 1px solid #333; padding: 8px 0;">
+                            <span style="color: #ccc;">${r.hora}</span>
+                            <span style="${estilo}">${icon}${r.numero || ''} - ${r.animal}</span>
+                        </div>
+                    `}).join('');
+                } else {
+                    resultadosHoyDiv.innerHTML = '<p style="color:#555; text-align:center; font-size:0.9rem;">Sin resultados hoy</p>';
+                }
+
+                // Helper para renderizar mini cards
+                const renderList = (containerId, list, color) => {
+                    const container = document.getElementById(containerId);
+                    if (list && list.length > 0) {
+                        container.innerHTML = list.map(item => `
+                            <div class="mini-card" style="border-color: ${color};">
+                                <div class="num" style="color:${color}">${item.numero}</div>
+                                <h4>${item.animal}</h4>
+                                <div class="pct" style="color:${color}">${item.percentage}%</div>
+                            </div>
+                        `).join('');
+                    } else {
+                        container.innerHTML = '<span style="color:#555; font-size:0.8rem; width:100%;">Sin datos</span>';
+                    }
+                };
+
+                if (data.pronosticos) {
+                    renderList("fijos-container", data.pronosticos.fijos, "#00f2c3");
+                    renderList("calientes-container", data.pronosticos.calientes, "#ff5b5b");
+                    renderList("frecuentes-container", data.pronosticos.frecuentes, "#ffcc00");
+                }
+                
+                // Vibrar el celular si es navegador compatible
+                if (navigator.vibrate) navigator.vibrate(200);
+
+                // Reproducir sonido
+                const audio = document.getElementById("notificacion");
+                audio.play().catch(e => console.log("Audio bloqueado (toca la pantalla primero):", e));
+
+                // Notificación Push Local
+                if (!isFirstLoad && Notification.permission === "granted") {
+                    navigator.serviceWorker.ready.then(registration => {
+                        registration.showNotification(`¡Salió ${data.ultimoAnimal}!`, {
+                            body: `IA Predice: ${data.prediccionIA} (${data.probabilidad}%)`,
+                            icon: 'img/icon.png',
+                            vibrate: [200, 100, 200]
+                        });
+                    });
+                }
+                isFirstLoad = false;
+            }
+        }, (error) => {
+            console.error("❌ Error conectando a Firebase:", error);
+        });
+    </script>
+
+    <!-- Lógica PWA -->
+    <script>
+        let deferredPrompt;
+        const installBanner = document.getElementById('install-banner');
+        const btnInstall = document.getElementById('btn-install');
+        const btnNotif = document.getElementById('btn-notif');
+
+        // Lógica Notificaciones
+        if (Notification.permission === 'granted') {
+            btnNotif.style.display = 'none';
+        }
+        btnNotif.addEventListener('click', () => {
+            Notification.requestPermission().then(perm => {
+                if (perm === 'granted') {
+                    btnNotif.style.display = 'none';
+                }
+            });
+        });
+
+        // 1. Escuchar evento de instalación disponible
+        window.addEventListener('beforeinstallprompt', (e) => {
+            e.preventDefault(); // Prevenir banner nativo antiguo
+            deferredPrompt = e; // Guardar evento
+            installBanner.style.display = 'block'; // Mostrar nuestro banner personalizado
+        });
+
+        // 2. Acción del botón Instalar
+        btnInstall.addEventListener('click', async () => {
+            if (deferredPrompt) {
+                deferredPrompt.prompt(); // Mostrar prompt nativo
+                const { outcome } = await deferredPrompt.userChoice;
+                console.log(`Usuario eligió: ${outcome}`);
+                deferredPrompt = null;
+                installBanner.style.display = 'none';
+            }
+        });
+
+        // 3. Registrar Service Worker
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('sw.js');
+        }
+
+        // Toast Function
+        window.showToast = (msg) => {
+            const x = document.getElementById("toast");
+            x.innerText = msg;
+            x.className = "toast show";
+            setTimeout(() => { x.className = x.className.replace("show", ""); }, 3000);
+        };
+    </script>
+</body>
+</html>
