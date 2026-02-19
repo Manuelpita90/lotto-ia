@@ -1,4 +1,4 @@
-const CACHE_NAME = 'lotto-ia-v2';
+const CACHE_NAME = 'lotto-ia-v3';
 const urlsToCache = [
   './movil.html',
   './manifest.json',

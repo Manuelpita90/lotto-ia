@@ -151,7 +151,7 @@
         });
         console.log("Firebase SDK inicializado.");
 
-        let isFirstLoad = true;
+        let lastKnownAnimal = null;
 
         // ESCUCHAR EN TIEMPO REAL
         // 'onSnapshot' se activa solo cuando la base de datos cambia
@@ -227,24 +227,27 @@
                     renderList("frecuentes-container", data.pronosticos.frecuentes, "#ffcc00");
                 }
                 
-                // Vibrar el celular si es navegador compatible
-                if (navigator.vibrate) navigator.vibrate(200);
+                // Detectar si es un nuevo sorteo (cambio de animal)
+                if (lastKnownAnimal && lastKnownAnimal !== data.ultimoAnimal) {
+                    // Vibrar el celular
+                    if (navigator.vibrate) navigator.vibrate([200, 100, 200]);
 
-                // Reproducir sonido
-                const audio = document.getElementById("notificacion");
-                audio.play().catch(e => console.log("Audio bloqueado (toca la pantalla primero):", e));
+                    // Reproducir sonido
+                    const audio = document.getElementById("notificacion");
+                    audio.play().catch(e => console.log("Audio bloqueado:", e));
 
-                // Notificación Push Local
-                if (!isFirstLoad && Notification.permission === "granted") {
-                    navigator.serviceWorker.ready.then(registration => {
-                        registration.showNotification(`¡Salió ${data.ultimoAnimal}!`, {
-                            body: `IA Predice: ${data.prediccionIA} (${data.probabilidad}%)`,
-                            icon: 'img/icon.png',
-                            vibrate: [200, 100, 200]
+                    // Notificación Push
+                    if (Notification.permission === "granted") {
+                        navigator.serviceWorker.ready.then(registration => {
+                            registration.showNotification(`¡Salió ${data.ultimoAnimal}!`, {
+                                body: `IA Predice: ${data.prediccionIA} (${data.probabilidad}%)`,
+                                icon: 'img/icon.png',
+                                tag: 'lotto-update'
+                            });
                         });
-                    });
+                    }
                 }
-                isFirstLoad = false;
+                lastKnownAnimal = data.ultimoAnimal;
             }
         }, (error) => {
             console.error("❌ Error conectando a Firebase:", error);
