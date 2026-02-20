@@ -188,13 +188,13 @@
                     <div style="display: flex; align-items: center; justify-content: space-between; margin-top: 15px;">
                         <div style="flex: 1; border-right: 1px solid rgba(255,255,255,0.1); padding-right: 5px;">
                             <span style="font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase;">1ra Opción</span>
-                            <div id="prediccion-ia" class="ia-prediction-text" style="font-size: 1.8rem; color: var(--accent-green); text-shadow: 0 0 20px rgba(0, 242, 195, 0.5);">...</div>
+                            <div id="prediccion-ia" class="ia-prediction-text" style="color: var(--accent-green); text-shadow: 0 0 20px rgba(0, 242, 195, 0.5);">...</div>
                             <div id="probabilidad-ia" class="ia-prob-badge" style="font-size: 0.8rem; background: var(--accent-green); color: #000; box-shadow: 0 4px 15px rgba(0, 242, 195, 0.4);"><i class="fas fa-spinner fa-spin"></i></div>
                         </div>
                         
                         <div style="flex: 1; padding-left: 5px;">
                             <span style="font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase;">2da Opción</span>
-                            <div id="prediccion-ia-2" class="ia-prediction-text" style="font-size: 1.5rem; color: var(--accent-pink); text-shadow: 0 0 15px rgba(225, 78, 202, 0.4);">...</div>
+                            <div id="prediccion-ia-2" class="ia-prediction-text" style="color: var(--accent-pink); text-shadow: 0 0 15px rgba(225, 78, 202, 0.4);">...</div>
                             <div id="probabilidad-ia-2" class="ia-prob-badge" style="font-size: 0.75rem; background: var(--accent-pink); color: #fff; box-shadow: 0 4px 15px rgba(225, 78, 202, 0.3);"><i class="fas fa-spinner fa-spin"></i></div>
                         </div>
                     </div>
@@ -274,22 +274,15 @@
     <script>
         // Lógica para cambiar de pestañas
         function cambiarPestana(tabId, boton) {
-            // Ocultar todas las pestañas
             document.querySelectorAll('.tab-content').forEach(tab => tab.classList.remove('active'));
-            // Quitar clase active a todos los botones
             document.querySelectorAll('.nav-item').forEach(btn => btn.classList.remove('active'));
-            
-            // Mostrar la pestaña seleccionada
             document.getElementById('tab-' + tabId).classList.add('active');
-            // Activar el botón presionado
             boton.classList.add('active');
-            // Scroll arriba
             window.scrollTo(0,0);
         }
     </script>
 
     <script type="module">
-        // Importamos Firebase directamente desde Internet (CDN)
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
         import { getFirestore, doc, onSnapshot, enableIndexedDbPersistence } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
@@ -309,14 +302,25 @@
             console.log('Persistencia offline advertencia:', err.code);
         });
 
+        // --- DICCIONARIO DE NÚMEROS AÑADIDO ---
+        const NUMEROS_ANIMALES = {
+            'DELFIN': '0', 'DELFÍN': '0', 'BALLENA': '00', 'CARNERO': '1', 'TORO': '2', 'CIEMPIES': '3', 'CIEMPIÉS': '3', 'ALACRAN': '4', 'ALACRÁN': '4',
+            'LEON': '5', 'LEÓN': '5', 'RANA': '6', 'PERICO': '7', 'RATON': '8', 'RATÓN': '8', 'AGUILA': '9', 'ÁGUILA': '9', 'TIGRE': '10',
+            'GATO': '11', 'CABALLO': '12', 'MONO': '13', 'PALOMA': '14', 'ZORRO': '15', 'OSO': '16',
+            'PAVO': '17', 'BURRO': '18', 'CHIVO': '19', 'COCHINO': '20', 'GALLO': '21', 'CAMELLO': '22',
+            'CEBRA': '23', 'IGUANA': '24', 'GALLINA': '25', 'VACA': '26', 'PERRO': '27', 'ZAMURO': '28',
+            'ELEFANTE': '29', 'CAIMAN': '30', 'CAIMÁN': '30', 'LAPA': '31', 'ARDILLA': '32', 'PESCADO': '33', 'VENADO': '34',
+            'JIRAFA': '35', 'CULEBRA': '36'
+        };
+
         let lastKnownAnimal = null;
 
         onSnapshot(doc(db, "monitor", "en_vivo"), (snapshot) => {
             if (snapshot.exists()) {
                 const data = snapshot.data();
                 
-                // --- PESTAÑA: RESULTADOS ---
-                document.getElementById("ultimo-animal").innerText = data.ultimoAnimal;
+                // --- RESULTADOS ---
+                document.getElementById("ultimo-animal").innerText = data.ultimoAnimal || "Esperando...";
                 
                 const resultadosHoyDiv = document.getElementById("resultados-hoy-container");
                 if (data.resultadosHoy && Array.isArray(data.resultadosHoy) && data.resultadosHoy.length > 0) {
@@ -339,21 +343,28 @@
                     resultadosHoyDiv.innerHTML = '<span style="color:var(--text-muted); font-size:0.85rem;">Sin resultados registrados hoy.</span>';
                 }
 
-                // --- PESTAÑA: PRONÓSTICOS ---
-                let nombreIA = data.prediccion || "N/A";
+                // --- PRONÓSTICOS (CORREGIDO CON NÚMEROS) ---
+                let nombreIA = data.prediccion || data.prediccionIA || "N/A";
                 if(nombreIA.includes('-')) nombreIA = nombreIA.split('-')[1].trim();
+                let numIA = NUMEROS_ANIMALES[nombreIA.toUpperCase()] || '';
+
                 let nombreIA2 = data.prediccion2 || "N/A";
                 if(nombreIA2.includes('-')) nombreIA2 = nombreIA2.split('-')[1].trim();
+                let numIA2 = NUMEROS_ANIMALES[nombreIA2.toUpperCase()] || '';
                 
-                document.getElementById("prediccion-ia").innerText = nombreIA;
-                document.getElementById("probabilidad-ia").innerHTML = `<i class="fas fa-bolt"></i> ${data.probabilidad}%`;
-                document.getElementById("prediccion-ia-2").innerText = nombreIA2;
+                // Formato: Número grande en blanco arriba, Animal en color abajo
+                const formatHTML1 = numIA ? `<span style="color:#fff; font-size:1.6rem;">${numIA}</span><br><span style="font-size:1rem;">${nombreIA}</span>` : nombreIA;
+                const formatHTML2 = numIA2 ? `<span style="color:#fff; font-size:1.4rem;">${numIA2}</span><br><span style="font-size:0.9rem;">${nombreIA2}</span>` : nombreIA2;
+
+                document.getElementById("prediccion-ia").innerHTML = formatHTML1;
+                document.getElementById("probabilidad-ia").innerHTML = `<i class="fas fa-bolt"></i> ${data.probabilidad || 0}%`;
+                
+                document.getElementById("prediccion-ia-2").innerHTML = formatHTML2;
                 document.getElementById("probabilidad-ia-2").innerHTML = `<i class="fas fa-bolt"></i> ${data.probabilidad2 || 0}%`;
 
                 const renderList = (containerId, list, color) => {
                     const container = document.getElementById(containerId);
                     if (list && list.length > 0) {
-                        // LIMITAR VISUALMENTE A LOS 2 MEJORES
                         const limitedList = list.slice(0, 2);
                         container.innerHTML = limitedList.map(item => `
                             <div class="mini-card" style="border-color: ${color}; box-shadow: 0 4px 10px ${color}20;">
@@ -363,7 +374,7 @@
                             </div>
                         `).join('');
                     } else {
-                        container.innerHTML = '<span style="color:var(--text-muted); font-size:0.85rem; width:100%; text-align:left;">No hay datos estadísticos suficientes.</span>';
+                        container.innerHTML = '<span style="color:var(--text-muted); font-size:0.85rem; width:100%; text-align:left;">No hay datos estadísticos.</span>';
                     }
                 };
 
@@ -372,7 +383,7 @@
                     renderList("frecuentes-container", data.pronosticos.frecuentes, "#ffcc00");
                 }
 
-                // --- PESTAÑA: HISTORIAL ---
+                // --- HISTORIAL ---
                 const historialDiv = document.getElementById("historial-container");
                 if (data.historial && Array.isArray(data.historial)) {
                     historialDiv.innerHTML = data.historial.map(h => `
@@ -383,10 +394,13 @@
                     `).join('');
                 }
 
-                // --- PESTAÑA: ACERCA DE (COMPARTIR) ---
+                // --- COMPARTIR WHASTAPP (Con URL) ---
                 document.getElementById('btn-share-wa').onclick = () => {
                     const urlOficial = "https://manuelpita90.github.io/lotto-ia/movil.html";
-                    const texto = `🧠 *Lotto IA (Red LSTM)*\n\n🎯 Último: ${data.ultimoAnimal}\n\n🔮 1ra Opción: *${nombreIA}*\n🔮 2da Opción: *${nombreIA2}*\n\n📲 Ingresa a la App Oficial aquí:\n${urlOficial}`;
+                    const formatText1 = numIA ? `${numIA} - ${nombreIA}` : nombreIA;
+                    const formatText2 = numIA2 ? `${numIA2} - ${nombreIA2}` : nombreIA2;
+                    
+                    const texto = `🧠 *Lotto IA (Red LSTM)*\n\n🎯 Último: ${data.ultimoAnimal}\n\n🔮 1ra Opción: *${formatText1}* (${data.probabilidad}%)\n🔮 2da Opción: *${formatText2}* (${data.probabilidad2 || 0}%)\n\n📲 Ingresa a la App Oficial aquí:\n${urlOficial}`;
                     const urlWa = `https://wa.me/?text=${encodeURIComponent(texto)}`;
                     window.open(urlWa, '_blank');
                 };
@@ -400,7 +414,7 @@
                     if (Notification.permission === "granted") {
                         navigator.serviceWorker.ready.then(registration => {
                             registration.showNotification(`¡Salió ${data.ultimoAnimal}!`, {
-                                body: `Nuevos pronósticos IA listos.`,
+                                body: `IA: 1° ${nombreIA} | 2° ${nombreIA2}`,
                                 icon: 'img/icon.png',
                                 tag: 'lotto-update'
                             });
