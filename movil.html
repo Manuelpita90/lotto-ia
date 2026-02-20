@@ -2,121 +2,320 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0"> <title>Lotto IA Móvil</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"> 
+    <title>Lotto IA</title>
     <link rel="manifest" href="manifest.json">
-    <meta name="theme-color" content="#121212">
+    <meta name="theme-color" content="#0d0d12">
     <link rel="apple-touch-icon" href="img/icon.png">
-    <style>
-        body { background-color: #121212; color: white; font-family: sans-serif; text-align: center; padding: 20px; }
-        .card { background: #1e1e1e; padding: 20px; border-radius: 15px; margin-bottom: 20px; box-shadow: 0 4px 10px rgba(0,0,0,0.5); }
-        h1 { color: #00f2c3; margin: 0; }
-        .animal-grande { font-size: 4rem; margin: 10px; }
-        .dato { font-size: 1.5rem; font-weight: bold; }
-        .badge { padding: 5px 10px; border-radius: 5px; font-size: 0.9rem; }
-        .live { color: red; animation: parpadeo 1s infinite; }
-        @keyframes parpadeo { 0% { opacity: 1; } 50% { opacity: 0.5; } 100% { opacity: 1; } }
-        
-        /* Estilos para listas horizontales */
-        .scroll-container { display: flex; gap: 10px; overflow-x: auto; padding-bottom: 10px; scrollbar-width: none; }
-        .mini-card { background: #333; padding: 10px; border-radius: 10px; min-width: 80px; text-align: center; border: 1px solid #444; }
-        .mini-card h4 { margin: 5px 0; font-size: 0.8rem; color: #fff; }
-        .mini-card .num { font-size: 1.2rem; font-weight: bold; color: #fff; }
-        .mini-card .pct { font-size: 0.7rem; font-weight: bold; }
-        
-        /* Toast Notification */
-        .toast { visibility: hidden; min-width: 250px; background-color: #333; color: #fff; text-align: center; border-radius: 50px; padding: 16px; position: fixed; z-index: 2000; left: 50%; bottom: 30px; transform: translateX(-50%); font-size: 1rem; border: 1px solid #00f2c3; box-shadow: 0 4px 15px rgba(0,0,0,0.8); }
-        .toast.show { visibility: visible; animation: fadein 0.5s, fadeout 0.5s 2.5s; }
-        @keyframes fadein { from {bottom: 0; opacity: 0;} to {bottom: 30px; opacity: 1;} }
-        @keyframes fadeout { from {bottom: 30px; opacity: 1;} to {bottom: 0; opacity: 0;} }
+    
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
-        /* Floating Button & Modal About */
-        .float-btn { position: fixed; bottom: 20px; right: 20px; background: #27293d; color: #00f2c3; border: 2px solid #00f2c3; border-radius: 50%; width: 50px; height: 50px; font-size: 1.5rem; display: flex; justify-content: center; align-items: center; box-shadow: 0 4px 10px rgba(0,0,0,0.5); z-index: 1500; cursor: pointer; transition: transform 0.2s; animation: popIn 0.8s cubic-bezier(0.68, -0.55, 0.27, 1.55) forwards; }
-        .float-btn:active { transform: scale(0.9); }
-        @keyframes popIn { from { transform: scale(0) rotate(-180deg); opacity: 0; } to { transform: scale(1) rotate(0deg); opacity: 1; } }
-        .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 2500; display: flex; justify-content: center; align-items: center; backdrop-filter: blur(5px); }
-        .hidden { display: none; }
-        .about-content { background: #1e1e1e; padding: 30px; border-radius: 20px; text-align: center; width: 85%; max-width: 350px; border: 1px solid #e14eca; position: relative; }
-        .about-logo { width: 80px; height: 80px; border-radius: 50%; border: 3px solid #00f2c3; margin-bottom: 15px; box-shadow: 0 0 15px rgba(0, 242, 195, 0.3); object-fit: cover; }
+    <style>
+        /* Variables de color y tema */
+        :root {
+            --bg-main: #0d0d12;
+            --card-bg: rgba(30, 30, 46, 0.6);
+            --card-border: rgba(255, 255, 255, 0.05);
+            --accent-green: #00f2c3;
+            --accent-pink: #e14eca;
+            --text-main: #ffffff;
+            --text-muted: #8ba1b5;
+        }
+
+        body { 
+            background-color: var(--bg-main); 
+            color: var(--text-main); 
+            font-family: 'Poppins', sans-serif; 
+            margin: 0; 
+            padding: 0; 
+            padding-bottom: 80px; /* Espacio para el botón flotante */
+            overflow-x: hidden;
+        }
+
+        /* Cabecera Fija (Sticky Header) */
+        header {
+            position: sticky;
+            top: 0;
+            background: rgba(13, 13, 18, 0.85);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            padding: 15px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            z-index: 100;
+            border-bottom: 1px solid var(--card-border);
+        }
+
+        .header-title {
+            font-size: 1.2rem;
+            font-weight: 700;
+            margin: 0;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .live-indicator {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            color: #ff3b30;
+            background: rgba(255, 59, 48, 0.1);
+            padding: 4px 10px;
+            border-radius: 20px;
+            animation: pulse-red 2s infinite;
+        }
+
+        .live-dot {
+            width: 6px;
+            height: 6px;
+            background: #ff3b30;
+            border-radius: 50%;
+        }
+
+        /* Contenedor Principal */
+        .container { padding: 15px; }
+
+        /* Tarjetas estilo Glassmorphism */
+        .card { 
+            background: var(--card-bg); 
+            backdrop-filter: blur(15px);
+            -webkit-backdrop-filter: blur(15px);
+            border: 1px solid var(--card-border);
+            padding: 20px; 
+            border-radius: 24px; 
+            margin-bottom: 15px; 
+            box-shadow: 0 8px 32px rgba(0,0,0,0.2); 
+            transition: transform 0.3s ease;
+        }
+
+        .card-title {
+            color: var(--text-muted);
+            font-size: 0.85rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin: 0 0 15px 0;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        /* Hero Card (Predicción IA) */
+        .hero-card {
+            background: linear-gradient(145deg, rgba(0, 242, 195, 0.1), rgba(30, 30, 46, 0.8));
+            border: 1px solid rgba(0, 242, 195, 0.3);
+            box-shadow: 0 10px 40px rgba(0, 242, 195, 0.15);
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .hero-card::before {
+            content: ''; position: absolute; top: -50%; left: -50%; width: 200%; height: 200%;
+            background: radial-gradient(circle, rgba(0,242,195,0.1) 0%, transparent 60%);
+            z-index: 0; pointer-events: none;
+        }
+
+        .hero-content { position: relative; z-index: 1; }
+
+        .ia-prediction-text {
+            font-size: 2.8rem;
+            font-weight: 700;
+            color: var(--accent-green);
+            text-shadow: 0 0 20px rgba(0, 242, 195, 0.5);
+            margin: 10px 0;
+            line-height: 1;
+        }
+
+        .ia-prob-badge {
+            display: inline-block;
+            background: var(--accent-green);
+            color: #000;
+            font-weight: 700;
+            padding: 6px 16px;
+            border-radius: 20px;
+            font-size: 0.9rem;
+            box-shadow: 0 4px 15px rgba(0, 242, 195, 0.4);
+        }
+
+        /* Listas Horizontales (Scroll) */
+        .scroll-container { 
+            display: flex; 
+            gap: 12px; 
+            overflow-x: auto; 
+            padding-bottom: 10px; 
+            scrollbar-width: none; 
+            -ms-overflow-style: none;
+        }
+        .scroll-container::-webkit-scrollbar { display: none; }
+
+        .mini-card { 
+            background: rgba(0,0,0,0.3); 
+            padding: 12px 15px; 
+            border-radius: 16px; 
+            min-width: 90px; 
+            text-align: center; 
+            border: 1px solid var(--card-border); 
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+        .mini-card .num { font-size: 1.5rem; font-weight: 700; line-height: 1; margin-bottom: 5px; }
+        .mini-card h4 { margin: 0; font-size: 0.85rem; color: #fff; font-weight: 400; }
+        .mini-card .pct { font-size: 0.75rem; font-weight: 700; margin-top: 5px; opacity: 0.8; }
+
+        /* Filas de resultados (Historial) */
+        .list-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 0;
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+        }
+        .list-row:last-child { border-bottom: none; }
+        .row-time { color: var(--text-muted); font-size: 0.9rem; font-weight: 500; }
+        .row-data { font-weight: 600; font-size: 1rem; }
+
+        /* Botón de Notificaciones Moderno */
+        .btn-action {
+            background: rgba(255,255,255,0.05);
+            color: var(--text-main);
+            border: 1px solid var(--card-border);
+            padding: 12px;
+            border-radius: 16px;
+            width: 100%;
+            font-family: inherit;
+            font-size: 0.95rem;
+            font-weight: 600;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            margin-bottom: 20px;
+            transition: all 0.2s;
+        }
+        .btn-action:active { transform: scale(0.98); background: rgba(255,255,255,0.1); }
+
+        /* Botón Flotante (FAB) */
+        .fab {
+            position: fixed; bottom: 25px; right: 25px;
+            background: var(--accent-pink);
+            color: #fff;
+            width: 55px; height: 55px;
+            border-radius: 50%;
+            display: flex; justify-content: center; align-items: center;
+            font-size: 1.5rem;
+            box-shadow: 0 10px 25px rgba(225, 78, 202, 0.4);
+            cursor: pointer; z-index: 1000; border: none;
+        }
+
+        /* Modales */
+        .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); z-index: 2500; display: flex; justify-content: center; align-items: center; opacity: 1; transition: opacity 0.3s; }
+        .modal-overlay.hidden { opacity: 0; pointer-events: none; }
+        .modal-content { background: var(--bg-main); padding: 30px; border-radius: 24px; text-align: center; width: 85%; max-width: 320px; border: 1px solid var(--card-border); box-shadow: 0 20px 50px rgba(0,0,0,0.5); transform: translateY(0); transition: transform 0.3s; }
+        .modal-overlay.hidden .modal-content { transform: translateY(50px); }
+
+        /* Animaciones */
+        @keyframes pulse-red { 0% { box-shadow: 0 0 0 0 rgba(255,59,48,0.4); } 70% { box-shadow: 0 0 0 6px rgba(255,59,48,0); } 100% { box-shadow: 0 0 0 0 rgba(255,59,48,0); } }
+        
+        /* Toast nativo iOS/Android style */
+        .toast { visibility: hidden; background: rgba(30,30,46,0.9); backdrop-filter: blur(10px); color: #fff; font-weight: 500; text-align: center; border-radius: 30px; padding: 12px 24px; position: fixed; z-index: 3000; left: 50%; bottom: 40px; transform: translateX(-50%); font-size: 0.9rem; border: 1px solid var(--card-border); box-shadow: 0 10px 30px rgba(0,0,0,0.5); opacity: 0; transition: opacity 0.3s, bottom 0.3s; }
+        .toast.show { visibility: visible; opacity: 1; bottom: 50px; }
     </style>
 </head>
 <body>
 
-    <!-- Toast Notification Container -->
     <div id="toast" class="toast"></div>
 
-    <div style="display: flex; justify-content: space-between; align-items: center;">
-        <h3>📱 Monitor Remoto</h3>
-        <span class="live">● EN VIVO</span>
-    </div>
-
-    <!-- Sonido de notificación -->
     <audio id="notificacion" src="https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3"></audio>
 
-    <!-- Botón Notificaciones -->
-    <button id="btn-notif" style="background: #333; color: white; border: 1px solid #555; padding: 8px 15px; border-radius: 20px; margin-bottom: 15px; cursor: pointer; width: 100%;">🔔 Activar Alertas</button>
+    <header>
+        <h1 class="header-title"><i class="fas fa-brain" style="color: var(--accent-pink);"></i> Lotto IA</h1>
+        <div class="live-indicator">
+            <div class="live-dot"></div> EN VIVO
+        </div>
+    </header>
 
-    <div class="card" style="border-top: 4px solid #ff0055;">
-        <p style="color: #aaa;">Último Sorteo</p>
-        <div id="ultimo-animal" class="dato">Esperando...</div>
+    <div class="container">
+        
+        <button id="btn-notif" class="btn-action">
+            <i class="fas fa-bell"></i> Activar Alertas de Sorteo
+        </button>
+
+        <div class="card" style="border-left: 4px solid var(--text-muted);">
+            <p class="card-title"><i class="fas fa-history"></i> Último Sorteo</p>
+            <div id="ultimo-animal" style="font-size: 1.8rem; font-weight: 700;">Esperando...</div>
+        </div>
+
+        <div class="card hero-card">
+            <div class="hero-content">
+                <p class="card-title" style="justify-content: center; color: var(--accent-green);"><i class="fas fa-microchip"></i> Pronóstico Red LSTM</p>
+                <div id="prediccion-ia" class="ia-prediction-text">Analizando...</div>
+                <div id="probabilidad-ia" class="ia-prob-badge"><i class="fas fa-spinner fa-spin"></i></div>
+            </div>
+        </div>
+
+        <div class="card">
+            <p class="card-title" style="color: #ff3b30;"><i class="fas fa-fire"></i> Tendencia Caliente</p>
+            <div id="calientes-container" class="scroll-container">
+                <span style="color:var(--text-muted); font-size:0.85rem;">Cargando tendencias...</span>
+            </div>
+        </div>
+
+        <div class="card">
+            <p class="card-title" style="color: #ffcc00;"><i class="fas fa-sync-alt"></i> Ciclos Frecuentes</p>
+            <div id="frecuentes-container" class="scroll-container">
+                <span style="color:var(--text-muted); font-size:0.85rem;">Buscando patrones...</span>
+            </div>
+        </div>
+
+        <div class="card">
+            <p class="card-title"><i class="fas fa-calendar-day"></i> Resultados de Hoy</p>
+            <div id="resultados-hoy-container">
+                <span style="color:var(--text-muted); font-size:0.85rem;">Esperando primer sorteo...</span>
+            </div>
+        </div>
+
+        <div class="card">
+            <p class="card-title"><i class="fas fa-list-ul"></i> Historial Reciente</p>
+            <div id="historial-container">
+                <span style="color:var(--text-muted); font-size:0.85rem;">Cargando datos...</span>
+            </div>
+        </div>
+
     </div>
 
-    <div class="card" style="border-top: 4px solid #00f2c3;">
-        <p style="color: #aaa;">IA Recomienda para ahora</p>
-        <div class="animal-grande">🎰</div>
-        <div id="prediccion-ia" class="dato">Cargando...</div>
-        <div id="probabilidad-ia" class="badge" style="background: #00f2c3; color: black; margin-top: 10px; display: inline-block;">0%</div>
+    <div id="install-banner" class="card" style="display: none; position: fixed; bottom: 90px; left: 50%; transform: translateX(-50%); width: 85%; z-index: 1000; border: 1px solid var(--accent-green); background: rgba(20,20,30,0.95);">
+        <p style="margin: 0 0 15px 0; font-weight: 600; font-size: 0.9rem;"><i class="fas fa-download"></i> Instalar Lotto IA en Inicio</p>
+        <div style="display: flex; gap: 10px;">
+            <button id="btn-install" style="flex: 1; background: var(--accent-green); color: #000; border: none; padding: 10px; border-radius: 12px; font-weight: bold; cursor: pointer;">Instalar</button>
+            <button onclick="document.getElementById('install-banner').style.display='none'" style="background: transparent; color: var(--text-muted); border: 1px solid var(--card-border); padding: 10px 15px; border-radius: 12px; cursor: pointer;">Ignorar</button>
+        </div>
     </div>
 
-    <!-- Nuevas Secciones de Pronósticos -->
-    <div class="card">
-        <p style="color: #aaa; margin-bottom: 10px;">🔒 Datos Fijos</p>
-        <div id="fijos-container" class="scroll-container"></div>
-    </div>
+    <button class="fab" onclick="document.getElementById('modal-about').classList.remove('hidden')">
+        <i class="fas fa-share-nodes"></i>
+    </button>
 
-    <div class="card">
-        <p style="color: #aaa; margin-bottom: 10px;">🔥 Datos Calientes</p>
-        <div id="calientes-container" class="scroll-container"></div>
-    </div>
-
-    <div class="card">
-        <p style="color: #aaa; margin-bottom: 10px;">🔄 Datos Frecuentes</p>
-        <div id="frecuentes-container" class="scroll-container"></div>
-    </div>
-
-    <div class="card">
-        <p style="color: #aaa; margin-bottom: 10px;">📅 Resultados de Hoy</p>
-        <div id="resultados-hoy-container" style="text-align: left;"></div>
-    </div>
-
-    <div class="card">
-        <p style="color: #aaa; margin-bottom: 10px;">Historial Reciente</p>
-        <div id="historial-container" style="text-align: left;"></div>
-    </div>
-
-    <!-- Banner de Instalación PWA -->
-    <div id="install-banner" style="display: none; position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); background: #222; padding: 20px; border-radius: 15px; box-shadow: 0 4px 20px rgba(0,0,0,0.8); width: 90%; max-width: 400px; text-align: center; border: 1px solid #00f2c3; z-index: 1000;">
-        <p style="margin: 0 0 15px 0; color: white; font-weight: bold;">📲 Instala Lotto IA para acceso rápido</p>
-        <button id="btn-install" style="background: #00f2c3; color: black; border: none; padding: 12px 25px; border-radius: 8px; font-weight: bold; cursor: pointer; font-size: 1rem;">Instalar App</button>
-        <button onclick="document.getElementById('install-banner').style.display='none'" style="background: transparent; color: #aaa; border: none; margin-left: 10px; cursor: pointer; text-decoration: underline;">Ahora no</button>
-    </div>
-
-    <!-- Botón Flotante Acerca De -->
-    <div class="float-btn" onclick="document.getElementById('modal-about').classList.remove('hidden')">
-        ℹ️
-    </div>
-
-    <!-- Modal Acerca De -->
     <div id="modal-about" class="modal-overlay hidden">
-        <div class="about-content">
-            <img src="img/icon.png" class="about-logo" alt="Logo AJP-Logic">
-            <h2 style="color: #e14eca; margin: 5px 0;">Lotto IA Móvil</h2>
-            <p style="color: #ccc; margin: 5px 0;">Versión 1.0.0</p>
-            <p style="color: #aaa; font-size: 0.8em; margin-bottom: 15px;">Actualizado: Enero 2025</p>
-            <button id="btn-share-wa" style="background: #25D366; color: white; border: none; padding: 10px 20px; border-radius: 20px; margin-bottom: 20px; cursor: pointer; font-weight: bold; font-size: 0.9rem; width: 100%;">📲 Compartir Pronóstico</button>
-            <hr style="border-color: #333; margin: 15px 0;">
-            <p style="color: #fff; font-size: 0.9em;">Desarrollado por <strong style="color: #00f2c3;">AJP-Logic</strong></p>
-            <p style="color: #666; font-size: 0.7em;">Copyright © 2025 AJP-Logic</p>
-            <button onclick="document.getElementById('modal-about').classList.add('hidden')" style="background: #333; color: white; border: 1px solid #555; padding: 8px 20px; border-radius: 10px; margin-top: 15px; cursor: pointer;">Cerrar</button>
+        <div class="modal-content">
+            <img src="img/icon.png" alt="Logo" style="width: 70px; height: 70px; border-radius: 20px; margin-bottom: 10px;">
+            <h2 style="margin: 0 0 5px 0; font-size: 1.4rem;">Lotto IA Móvil</h2>
+            <p style="color: var(--text-muted); margin: 0 0 20px 0; font-size: 0.8rem;">Sistema Experto Predictivo</p>
+            
+            <button id="btn-share-wa" class="btn-action" style="background: #25D366; color: #fff; border: none;">
+                <i class="fab fa-whatsapp" style="font-size: 1.2rem;"></i> Compartir Pronóstico
+            </button>
+            
+            <p style="color: var(--text-muted); font-size: 0.75rem; margin-top: 20px;">Desarrollado por <strong>AJP-Logic</strong></p>
+            
+            <button onclick="document.getElementById('modal-about').classList.add('hidden')" style="width: 100%; background: transparent; color: #fff; border: 1px solid var(--card-border); padding: 12px; border-radius: 12px; margin-top: 10px;">Cerrar</button>
         </div>
     </div>
 
@@ -126,7 +325,6 @@
         import { getFirestore, doc, onSnapshot, enableIndexedDbPersistence } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
         import { getAnalytics } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-analytics.js";
 
-        // PEGA LA MISMA CONFIGURACIÓN AQUÍ
         const firebaseConfig = {
             apiKey: "AIzaSyANhUUQ3T1k_RfVRkuM57nM6OZuCrqApXc",
             authDomain: "lotto-ia-d4cc4.firebaseapp.com",
@@ -141,32 +339,29 @@
         const analytics = getAnalytics(app);
         const db = getFirestore(app);
 
-        // Habilitar persistencia offline (Caché)
         enableIndexedDbPersistence(db).catch((err) => {
-            if (err.code == 'failed-precondition') {
-                console.log('Persistencia falló: Múltiples pestañas abiertas.');
-            } else if (err.code == 'unimplemented') {
-                console.log('Persistencia no soportada por el navegador.');
-            }
+            console.log('Persistencia offline advertencia:', err.code);
         });
-        console.log("Firebase SDK inicializado.");
 
         let lastKnownAnimal = null;
 
-        // ESCUCHAR EN TIEMPO REAL
-        // 'onSnapshot' se activa solo cuando la base de datos cambia
         onSnapshot(doc(db, "monitor", "en_vivo"), (snapshot) => {
-            console.log("🔥 Conexión a Firebase exitosa. Datos recibidos.");
             if (snapshot.exists()) {
                 const data = snapshot.data();
                 
                 document.getElementById("ultimo-animal").innerText = data.ultimoAnimal;
-                document.getElementById("prediccion-ia").innerText = data.prediccionIA;
-                document.getElementById("probabilidad-ia").innerText = data.probabilidad + "% Probabilidad";
+                
+                // Limpiar texto de IA para que luzca estético
+                let nombreIA = data.prediccionIA || "N/A";
+                // Remover números si vienen en el string (ej: "21 - GALLO" -> "GALLO")
+                if(nombreIA.includes('-')) nombreIA = nombreIA.split('-')[1].trim();
+                
+                document.getElementById("prediccion-ia").innerText = nombreIA;
+                document.getElementById("probabilidad-ia").innerHTML = `<i class="fas fa-bolt"></i> ${data.probabilidad}% Confianza`;
 
-                // Configurar botón de compartir
+                // Botón compartir WhatsApp
                 document.getElementById('btn-share-wa').onclick = () => {
-                    const texto = `🤖 *Lotto IA Reporte*\n\n🏁 Último: ${data.ultimoAnimal}\n🔮 Predicción: *${data.prediccionIA}*\n📊 Probabilidad: ${data.probabilidad}%\n\n¡Suerte! 🍀`;
+                    const texto = `🧠 *Lotto IA (Red LSTM)*\n\n🎯 Último: ${data.ultimoAnimal}\n🔮 Pronóstico: *${nombreIA}*\n⚡ Confianza: ${data.probabilidad}%\n\n¡Mucha suerte! 🍀`;
                     const url = `https://wa.me/?text=${encodeURIComponent(texto)}`;
                     window.open(url, '_blank');
                 };
@@ -175,9 +370,9 @@
                 const historialDiv = document.getElementById("historial-container");
                 if (data.historial && Array.isArray(data.historial)) {
                     historialDiv.innerHTML = data.historial.map(h => `
-                        <div style="display: flex; justify-content: space-between; border-bottom: 1px solid #333; padding: 8px 0;">
-                            <span style="color: #ccc;">${h.hora}</span>
-                            <span style="font-weight: bold; color: #fff;">${h.numero} - ${h.animal}</span>
+                        <div class="list-row">
+                            <span class="row-time">${h.hora}</span>
+                            <span class="row-data">${h.numero} - ${h.animal}</span>
                         </div>
                     `).join('');
                 }
@@ -186,23 +381,25 @@
                 const resultadosHoyDiv = document.getElementById("resultados-hoy-container");
                 if (data.resultadosHoy && Array.isArray(data.resultadosHoy) && data.resultadosHoy.length > 0) {
                     resultadosHoyDiv.innerHTML = data.resultadosHoy.map(r => {
-                        const estilo = r.esAcierto ? 'color: #00f2c3; font-weight: bold; text-shadow: 0 0 5px rgba(0,242,195,0.5);' : 'color: #fff; font-weight: bold;';
-                        const icon = r.esAcierto ? '✅ ' : '';
+                        const esAcierto = r.esAcierto;
+                        const color = esAcierto ? 'var(--accent-green)' : '#fff';
+                        const shadow = esAcierto ? 'text-shadow: 0 0 10px rgba(0,242,195,0.5);' : '';
+                        const icon = esAcierto ? '<i class="fas fa-check-circle"></i> ' : '';
                         
                         let clickAttr = '';
-                        if (r.esAcierto && r.metodosAcierto && r.metodosAcierto.length > 0) {
-                            const msg = `🎯 Acierto por: ${r.metodosAcierto.join(', ')}`;
-                            clickAttr = `onclick="window.showToast('${msg}')" style="cursor: pointer;"`;
+                        if (esAcierto && r.metodosAcierto && r.metodosAcierto.length > 0) {
+                            const msg = `🎯 Acierto detectado por:\n${r.metodosAcierto.join(', ')}`;
+                            clickAttr = `onclick="window.showToast('${msg}')"`;
                         }
 
                         return `
-                        <div ${clickAttr} style="display: flex; justify-content: space-between; border-bottom: 1px solid #333; padding: 8px 0;">
-                            <span style="color: #ccc;">${r.hora}</span>
-                            <span style="${estilo}">${icon}${r.numero || ''} - ${r.animal}</span>
+                        <div class="list-row" ${clickAttr}>
+                            <span class="row-time">${r.hora}</span>
+                            <span class="row-data" style="color: ${color}; ${shadow} cursor: ${esAcierto ? 'pointer' : 'default'}">${icon}${r.numero || ''} - ${r.animal}</span>
                         </div>
                     `}).join('');
                 } else {
-                    resultadosHoyDiv.innerHTML = '<p style="color:#555; text-align:center; font-size:0.9rem;">Sin resultados hoy</p>';
+                    resultadosHoyDiv.innerHTML = '<span style="color:var(--text-muted); font-size:0.85rem;">Sin resultados registrados hoy.</span>';
                 }
 
                 // Helper para renderizar mini cards
@@ -210,38 +407,35 @@
                     const container = document.getElementById(containerId);
                     if (list && list.length > 0) {
                         container.innerHTML = list.map(item => `
-                            <div class="mini-card" style="border-color: ${color};">
+                            <div class="mini-card" style="border-color: ${color}; box-shadow: 0 4px 10px ${color}20;">
                                 <div class="num" style="color:${color}">${item.numero}</div>
                                 <h4>${item.animal}</h4>
-                                <div class="pct" style="color:${color}">${item.percentage}%</div>
+                                <div class="pct" style="color:${color}">${item.percentage || item.total}%</div>
                             </div>
                         `).join('');
                     } else {
-                        container.innerHTML = '<span style="color:#555; font-size:0.8rem; width:100%;">Sin datos</span>';
+                        container.innerHTML = '<span style="color:var(--text-muted); font-size:0.85rem; width:100%; text-align:left;">No hay datos estadísticos suficientes.</span>';
                     }
                 };
 
+                // Renderizamos tendencias
                 if (data.pronosticos) {
-                    renderList("fijos-container", data.pronosticos.fijos, "#00f2c3");
-                    renderList("calientes-container", data.pronosticos.calientes, "#ff5b5b");
+                    renderList("calientes-container", data.pronosticos.calientes, "#ff3b30");
                     renderList("frecuentes-container", data.pronosticos.frecuentes, "#ffcc00");
                 }
                 
-                // Detectar si es un nuevo sorteo (cambio de animal)
+                // Notificaciones y Sonido para nuevo sorteo
                 if (lastKnownAnimal && lastKnownAnimal !== data.ultimoAnimal) {
-                    // Vibrar el celular
                     if (navigator.vibrate) navigator.vibrate([200, 100, 200]);
-
-                    // Reproducir sonido
                     const audio = document.getElementById("notificacion");
-                    audio.play().catch(e => console.log("Audio bloqueado:", e));
+                    audio.play().catch(e => console.log("Audio bloqueado por navegador:", e));
 
-                    // Notificación Push
                     if (Notification.permission === "granted") {
                         navigator.serviceWorker.ready.then(registration => {
                             registration.showNotification(`¡Salió ${data.ultimoAnimal}!`, {
-                                body: `IA Predice: ${data.prediccionIA} (${data.probabilidad}%)`,
+                                body: `Nueva predicción IA: ${nombreIA} (${data.probabilidad}%)`,
                                 icon: 'img/icon.png',
+                                badge: 'img/icon.png',
                                 tag: 'lotto-update'
                             });
                         });
@@ -249,59 +443,51 @@
                 }
                 lastKnownAnimal = data.ultimoAnimal;
             }
-        }, (error) => {
-            console.error("❌ Error conectando a Firebase:", error);
         });
     </script>
 
-    <!-- Lógica PWA -->
     <script>
         let deferredPrompt;
         const installBanner = document.getElementById('install-banner');
         const btnInstall = document.getElementById('btn-install');
         const btnNotif = document.getElementById('btn-notif');
 
-        // Lógica Notificaciones
+        // Permisos de notificación
         if (Notification.permission === 'granted') {
             btnNotif.style.display = 'none';
         }
         btnNotif.addEventListener('click', () => {
             Notification.requestPermission().then(perm => {
-                if (perm === 'granted') {
-                    btnNotif.style.display = 'none';
-                }
+                if (perm === 'granted') btnNotif.style.display = 'none';
             });
         });
 
-        // 1. Escuchar evento de instalación disponible
+        // PWA Instalación
         window.addEventListener('beforeinstallprompt', (e) => {
-            e.preventDefault(); // Prevenir banner nativo antiguo
-            deferredPrompt = e; // Guardar evento
-            installBanner.style.display = 'block'; // Mostrar nuestro banner personalizado
+            e.preventDefault();
+            deferredPrompt = e;
+            installBanner.style.display = 'block';
         });
 
-        // 2. Acción del botón Instalar
         btnInstall.addEventListener('click', async () => {
             if (deferredPrompt) {
-                deferredPrompt.prompt(); // Mostrar prompt nativo
-                const { outcome } = await deferredPrompt.userChoice;
-                console.log(`Usuario eligió: ${outcome}`);
+                deferredPrompt.prompt();
+                await deferredPrompt.userChoice;
                 deferredPrompt = null;
                 installBanner.style.display = 'none';
             }
         });
 
-        // 3. Registrar Service Worker
         if ('serviceWorker' in navigator) {
             navigator.serviceWorker.register('sw.js');
         }
 
-        // Toast Function
+        // Toast elegante
         window.showToast = (msg) => {
             const x = document.getElementById("toast");
             x.innerText = msg;
-            x.className = "toast show";
-            setTimeout(() => { x.className = x.className.replace("show", ""); }, 3000);
+            x.classList.add("show");
+            setTimeout(() => { x.classList.remove("show"); }, 3000);
         };
     </script>
 </body>
